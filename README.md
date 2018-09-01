@@ -28,6 +28,14 @@ Inline `code` looks like that.
 
 ## Visualization
 
+As a result of the optimization workflow four files are created:
+- All decision variables are saved in `model.sol` (created by Gurobi)
+- All parameter regarding the technologies (efficiency, investment, etc.) are saved in `parameter_dev.json`
+- All further parameter (interest rate, costs for natural gas, ...) are saved in `parameter.txt`
+- Demand time series are saved in `demands.txt`
+
+The visualization methods presented below use these output files to create illustrative plots to visualize and analyse the numeric results. 
+
 ### Hourly time steps of complete year (8760 time steps)
 
 #### Yearly plot (averaged over months) (1 plot)
