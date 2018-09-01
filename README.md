@@ -6,12 +6,17 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 - [Models](./README.md#models)
 - [Documentation](./README.md#documentation)
 
-
 ## Models
 
 ### Overview
+Some Python code:
+```python
+s = "Python syntax highlighting"
+print s
+```
 
 ### Model 1
+Inline `code` looks like that.
 
 ### Model 2
 
@@ -22,12 +27,6 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 ### Installation and usage Instructions
 - ... models are tested with Pyhton X.X, Gurobi version X.X.
 - Required python packages: ...
-
-<!---## References
-[comment]: #
--   [Majewski2017] D.E. Majewski, M. Wirtz, M. Lampe, A. Bardow: 
-    Robust multi-objective optimization for sustainable design of distributed energy supply systems.
-    *Computers & Chemical Engineering*, Volume 102, Pages 26-39, 2017.
 
 ---
 
