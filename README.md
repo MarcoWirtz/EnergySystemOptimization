@@ -8,17 +8,47 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 
 ## Models
 
-### Overview
 Some Python code:
 ```python
 s = "Python syntax highlighting"
 print s
 ```
 
-### Model 1
+### Basic model
 Inline `code` looks like that.
 
-### Model 2
+### Type day clustering
+
+
+### Discrete sizing
+
+
+### Part load efficiency
+
+
+## Visualization
+
+### Hourly time steps of complete year (8760 time steps)
+
+#### Yearly plot (averaged over months) (1 plot)
+#### Monthly plot (averaged over days) (12 plots)
+#### Daily plot (365 plots)
+#### Carpet plot
+#### Box plot (daily profile)
+#### Box plot (seasonal profile)
+
+### Type days
+#### Visualization method 1
+#### Visualization method 2
+#### Visualization method 3
+
+### Others
+#### Scatter density plot
+#### Matrix illustration
+
+## Further tools
+### Gurobi solver tuning
+
 
 ---
 
