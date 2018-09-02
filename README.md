@@ -15,7 +15,7 @@ print s
 ```
 
 ### Basic model
-Inline `code` looks like that.
+`Basic_Model` is a basic optimization model together the pre-processing and post-processing workflow in Python.
 
 ### Type day clustering
 
