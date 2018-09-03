@@ -9,10 +9,7 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 ## Models
 
 Some Python code:
-```python
-s = "Python syntax highlighting"
-print s
-```
+
 
 ### Basic model
 `Basic_Model` is a basic optimization model together the pre-processing and post-processing workflow in Python.
@@ -21,10 +18,41 @@ print s
 
 
 ### Discrete sizing
+```
+# Purchase decision binary variables (1 if device is installed, 0 otherwise)
+x = {}
+for device in devs.keys():
+    x[device] = {}
+    for comp in range(number_comp[device]):
+        x[device][comp] = model.addVar(vtype="B", name="x_" + str(device) + "_comp" + str(comp))
+```
 
+### Part load efficiency (piece-wise function) 
+```python
+# CONNECT ENERGY-OUTPUT TO ENERGY-INPUT for every energy conversion system
+# Linearization of part-load behavior
+if partLoad == 1:
+    for device in ["BOI","CHP"]:
+        for comp in range(number_comp[device]):
+            for t in time_steps:
+                model.addConstr(q_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["q"][i]
+                                                     for i in range(number_nodes[device][comp])))
+                model.addConstr(g_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["g"][i]
+                                                     for i in range(number_nodes[device][comp])))
 
-### Part load efficiency
+                model.addConstr(y[device][comp][t] == sum(lin[device][comp][t][i] for i in range(number_nodes[device][comp])))
+                model.addSOS(gp.GRB.SOS_TYPE2, [lin[device][comp][t][i] for i in range(number_nodes[device][comp])])
 
+    for device in ["CHP"]:
+        for comp in range(number_comp[device]):
+            for t in time_steps:
+                model.addConstr(el_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["el"][i]
+                                                     for i in range(number_nodes[device][comp])), "electrical_power_" + str(device) + "_comp" + str(comp) + "_t" + str(t))
+```
+BOI als Beispiel, AbbildungsDoku mit Diagramm, Kurzergebnisse (Vergleich zu konstantem eta)
+
+### Piece-wise linear investment 
+TES als Beispiel, 
 
 ## Visualization
 
@@ -74,6 +102,6 @@ The visualization methods presented below use these output files to create illus
 ### Feedback
 All bugs, feature requests and feedback are welcome.
 
-### Coordinator
+### Contact
 Marco Wirtz, Institute for Energy Efficient Buildings and Indoor Climate, RWTH Aachen Unviersity, Germany [(contact)](http://www.ebc.eonerc.rwth-aachen.de/cms/E-ON-ERC-EBC/Das-Institut/Mitarbeiter/Team6/~poet/Wirtz-Marco/?allou=1&lidx=1)
 
