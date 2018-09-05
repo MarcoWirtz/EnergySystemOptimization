@@ -4,7 +4,7 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 ### Content
 
 - [Models](./README.md#models)
-- [Useful tools](./README.md#usefultools)
+- [Useful tools](./README.md#useful-tools)
 - [Documentation](./README.md#documentation)
 
 ## Models
