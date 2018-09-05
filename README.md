@@ -4,6 +4,7 @@ This repo is a collection of (MILP) models and other tools for mathematical opti
 ### Content
 
 - [Models](./README.md#models)
+- [Useful tools](./README.md#usefultools)
 - [Documentation](./README.md#documentation)
 
 ## Models
@@ -82,7 +83,7 @@ The visualization methods presented below use these output files to create illus
 #### Scatter density plot
 #### Matrix illustration
 
-## Further tools
+## Useful tools
 ### Gurobi solver tuning
 
 
