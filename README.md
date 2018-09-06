@@ -55,6 +55,67 @@ BOI als Beispiel, AbbildungsDoku mit Diagramm, Kurzergebnisse (Vergleich zu kons
 ### Piece-wise linear investment 
 TES als Beispiel, 
 
+### Objective functions
+#### Total annualized costs
+```
+model.addConstr(obj["tac"] == sum(c_inv[dev] for dev in all_devs) + sum(c_om[dev] for dev in all_devs)  
+                                  + gas_total * param["price_gas"] + from_grid_total * param["price_el"] - to_grid_total * param["revenue_feed_in"], "sum_up_TAC")
+    
+```
+
+#### CO2 emissions (onsite)
+CO2 emissions that result from burning fossil fuels by the devices itself (e.g. boiler, chp, ...)
+```
+model.addConstr(obj["co2_onsite"] == gas_total * param["gas_CO2_emission"], "sum_up_onsite_CO2_emissions")
+```
+with
+```
+gas_total = sum(sum(tau[t] * gas[device][t] for t in time_steps) for device in ["BOI", "CHP"])
+```  
+
+#### CO2 emissions (gross)
+CO2 emissions that result from 
+a) burning fossil fuels by the devices itself (e.g. boiler, chp, ...),
+b) power supply from national grid
+```
+model.addConstr(obj["co2_gross"] == gas_total * param["gas_CO2_emission"] + from_grid_total * param["grid_CO2_emission"], "sum_up_gross_CO2_emissions")
+```
+
+#### CO2 emissions (net)
+CO2 emissions that result from 
+- burning fossil fuels by the devices itself (e.g. boiler, chp, ...),
+- power supply from national grid
+- avoided burden through power feed-in (negative emissions) 
+```
+model.addConstr(obj["co2_net"] == gas_total * param["gas_CO2_emission"] + (from_grid_total - to_grid_total) * param["grid_CO2_emission"], "sum_up_net_CO2_emissions")
+```    
+
+#### Annualized investment
+```
+model.addConstr(obj["ann_invest"] == sum(c_inv[dev] for dev in all_devs))
+```
+
+#### Power from grid
+```
+model.addConstr(obj["power_from_grid"] == sum(power["from_grid"][t] for t in time_steps))
+```
+
+#### Net power from grid
+```
+model.addConstr(obj["net_power_from_grid"] == from_grid_total - to_grid_total)
+```
+with 
+```
+from_grid_total = sum(power["from_grid"][t] for t in time_steps)
+to_grid_total = sum(power["to_grid"][t] for t in time_steps)
+```
+
+#### Renewable generation
+Absolute produced energy by renewable energies. (*Remark: Heat should be counted different than electricity.*)
+```
+model.addConstr(obj["renewables_abs"] == sum(power["WT"][t] + power["PV"][t] + heat["STC"][t] for t in time_steps))
+``` 
+
 ## Visualization
 
 As a result of the optimization workflow four files are created:
