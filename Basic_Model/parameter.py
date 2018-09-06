@@ -93,6 +93,12 @@ def load_params():
     
     # Calculate COP from ambient temperature
     devs["ASHP"]["COP"] = calc_COP_AHSP(devs, weather_dict)
+    
+    # do not use extra function, use it here:
+#    for t in weather_dict["Dry Bulb Temperature"].keys():
+#        air_temp = weather_dict["Dry Bulb Temperature"][t]
+#        devs["ASHP"]["COP"][t] = devs["ASHP"]["eta"] * (devs["ASHP"]["t_supply"]/(devs["ASHP"]["t_supply"]-(air_temp + 273)))
+    
 
     #%% ABSORPTION CHILLER
     devs["AC"] = {"inv_var": 78,        # kEUR/MW_th,       variable investment
@@ -202,7 +208,25 @@ def load_params():
                                    27: (1000,   0.00),
                                    }
     
+    
+#    power_curve = [(0, 0),
+#                   (2.4, 0),
+#                    (2.5, 1.14),
+#                    # ...
+#                    (14, 500.00),
+#                    (25, 500.00),
+#                    (25.01, 0.00),
+#                    ]
+#    
+#    speed_points = [power_curve[k][0] for k in range(len(power_curve))]
+#    power_points = [power_curve[k][1] for k in range(len(power_curve))]
+#    
+#    res = np.interp(2.5, speed_points, power_points)
+    
+    # add in objective function for costs: cost per MW from grid (-> line limit, how much does a power connection cost?)
+    
     # Calculate power output
+    # move functio here:
     devs["WT"] = calc_wind(devs["WT"], weather_dict)
 
     #%% PHOTOVOLTAIC
@@ -217,7 +241,7 @@ def load_params():
                   "azimuth": 0,             # deg,          surface azimuth angle: south: 0
                                             #               -180 <= azimuth <= 180; east: negative and west positive
 
-                  # collector data (based on https://www.photovoltaik4all.de/lg-solar-lg360q1c-a5-neon-r)
+                  # Collector data (based on https://www.photovoltaik4all.de/lg-solar-lg360q1c-a5-neon-r)
                   "power_noct": 271,        # W,
                   "temp_amb_noct": 20,      # degC,
                   "solar_noct": 800,        # W/m2,
@@ -281,7 +305,7 @@ def get_irrad_profile(ele, azim, weather_dict):
     (omega, delta, thetaZ, airmass, Gon) = geometry
     theta = sun.getIncidenceAngle(ele, azim, location[0], omega, delta)
 
-    theta = theta[1] # cosTheta is not required
+    theta = theta[1] # cos(theta) is not required
 
     # Calculate radiation on tilted surface
     return sun.getTotalRadiationTiltedSurface(theta, thetaZ, sun_direct, sun_diffuse, airmass, Gon, ele, 0.2)
@@ -357,6 +381,8 @@ def calc_wind(dev, weather_dict):
     for t in range(len(weather_dict["Wind Speed"])):
         wind_speed_ground = weather_dict["Wind Speed"][t]
         wind_speed_shaft = wind_speed_ground * (dev["hub_height"] / dev["ref_height"]) ** dev["expo_a"]
+        
+        # if cases can then be eliminated, if np.interp is used
         if wind_speed_shaft <= 0:
             dev["power"][t] = 0
         elif wind_speed_shaft > power_curve[len(power_curve)-1][0]:
@@ -364,6 +390,10 @@ def calc_wind(dev, weather_dict):
             dev["power"][t] = 0
     
         # Linear interpolation
+        
+        # better use: #    res = np.interp(2.5, speed_points, power_points)
+        # do not use this extra function calc_wind, move it directly to wind data section
+        
         else:
             for k in range(len(power_curve)):
                 if power_curve[k][0] > wind_speed_shaft:
@@ -406,6 +436,7 @@ def calc_annual_investment(devs, param):
         # If there are no fix costs:
         devs[device]["inv_fix"] = 0
         
+        # If there are no replacement costs:
         life_time = devs[device]["life_time"]
         inv_fix_init = devs[device]["inv_fix"]
         inv_var_init = devs[device]["inv_var"]
