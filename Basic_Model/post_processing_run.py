@@ -85,12 +85,12 @@ def read_demand_file(file_name, demand_list, time_steps):
 def run_post_processing(dir_results):
     
     tech_list = ["heat_BOI", "heat_CHP", "power_CHP", 
-                 "heat_EH", "power_EH",
-                 "heat_ASHP", "power_ASHP", 
+#                 "heat_EH", "power_EH",
+#                 "heat_ASHP", "power_ASHP", 
                  "power_from_grid", "power_to_grid",
-                 "power_WT", "power_PV", "heat_STC", 
+#                 "power_WT", "power_PV", "heat_STC", 
                  "cool_AC", "heat_AC", "cool_CC", "power_CC", 
-                 "ch_TES", "dch_TES", "soc_TES", "ch_CTES", "dch_CTES", "soc_CTES", "ch_BAT", "dch_BAT", "soc_BAT", 
+                 "ch_TES", "dch_TES", "soc_TES", #"ch_CTES", "dch_CTES", "soc_CTES", "ch_BAT", "dch_BAT", "soc_BAT", 
                  ]
     
     demand_list = ["heat", "cool", "power"]
@@ -141,6 +141,6 @@ def run_post_processing(dir_results):
 if __name__ == "__main__":
     
     # Set result directory that should be evaluated:
-    dir_results = "D:\\mwi\\Gurobi_Modelle\\Basic_Model\\results\\2018-09-02_14-26-51_multi-objective__tac__co2_gross"
+    dir_results = "D:\\mwi\\Gurobi_Modelle\\EnergySystemOptimization\\Basic_Model\\results\\2018-09-06_16-41-18_multi-objective__tac__co2_gross"
         
     run_post_processing(dir_results)

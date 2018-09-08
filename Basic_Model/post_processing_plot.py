@@ -18,9 +18,9 @@ def save_energy_flows(time_series, params, dir_results):
     time_steps = range(8760)
     
     sum_distr = {}
-    heat_sources = ["heat_BOI", "heat_CHP", "heat_EH", "heat_ASHP", "heat_STC", "dch_TES"]
-    cool_sources = ["cool_CC", "cool_AC", "dch_CTES"]
-    elec_sources = ["power_WT", "power_CHP", "power_from_grid", "power_PV", "dch_BAT"]
+    heat_sources = ["heat_BOI", "heat_CHP", "dch_TES"]
+    cool_sources = ["cool_CC", "cool_AC"]
+    elec_sources = ["power_CHP", "power_from_grid"]
     tech_color = get_tech_color()
     
     consum = {}
@@ -46,7 +46,7 @@ def save_energy_flows(time_series, params, dir_results):
     consum["cool"] = {}
     for t in time_steps:
         # Sum cooling consumption for every time step as fraction
-        cool_sinks = ["cool_dem", "ch_CTES"]
+        cool_sinks = ["cool_dem"]
         consum["cool"][t] = np.array([time_series[k][t] for k in cool_sinks])
         if sum(consum["cool"][t]) == 0:
             consum["cool"][t] = np.zeros(len(cool_sinks))
@@ -63,7 +63,7 @@ def save_energy_flows(time_series, params, dir_results):
     for t in time_steps:
         # Sum electricity consumption for every time step as fraction
         time_series["power_dem"]
-        elec_sinks = ["power_dem", "power_to_grid", "power_EH", "power_ASHP", "power_CC", "ch_BAT"]
+        elec_sinks = ["power_dem", "power_to_grid", "power_CC"]
         consum["elec"][t] = np.array([time_series[k][t] for k in elec_sinks])
         if sum(consum["elec"][t]) == 0:
             consum["elec"][t] = np.zeros(len(elec_sinks))
@@ -279,13 +279,13 @@ def plot_time_series(time_series, plot_mode, dir_results):
             if "power" in dev or "ch_BAT" in dev or "dch_BAT" in dev:
                 power_dict[dev] = M[dev]
                 
-        for dev in ["soc_TES", "soc_CTES", "soc_BAT"]:
+        for dev in ["soc_TES"]:#, "soc_CTES", "soc_BAT"]:
             sto_dict[dev] = M[dev][m]  
     
         save_name = dir_results + "//Year_Profile"
         plot_interval(heat_dict, cool_dict, power_dict, save_name, "Month")
         save_name = dir_results + "//Year_Profile_Storage"
-        plot_interval_storage(M, save_name, "Month")
+#        plot_interval_storage(M, save_name, "Month")
     
     #%% Plot monthly profile
     if plot_mode["monthly"] == 1:  
@@ -299,10 +299,10 @@ def plot_time_series(time_series, plot_mode, dir_results):
                     power_dict[dev] = D[dev][m]
             save_name = dir_results + "//" + str(m+1) + "_" + month_tuple[m]
             plot_interval(heat_dict, cool_dict, power_dict, save_name, "Day")
-            for dev in ["soc_TES", "soc_CTES", "soc_BAT"]:
+            for dev in ["soc_TES"]:
                 sto_dict[dev] = D[dev][m]
             save_name = dir_results + "//" + str(m+1) + "_" + month_tuple[m] + "_Storage"
-            plot_interval_storage(sto_dict, save_name, "Day")
+#            plot_interval_storage(sto_dict, save_name, "Day")
             
     #%% Plot daily profile
     if plot_mode["daily"] == 1:
@@ -322,10 +322,10 @@ def plot_time_series(time_series, plot_mode, dir_results):
                     power_dict[dev] = H[dev][d]
             save_name = dir_results + "//" + str(month_num) + "_" + month_name + "//" + month_name + "_" + str(day_num)
             plot_interval(heat_dict, cool_dict, power_dict, save_name, "Time [hours]")
-            for dev in ["soc_TES", "soc_CTES", "soc_BAT"]:
+            for dev in ["soc_TES"]:
                 sto_dict[dev] = H[dev][d]
             save_name = dir_results + "//" + str(month_num) + "_" + month_name + "//" + month_name + "_" + str(day_num) + "_Storage"
-            plot_interval_storage(sto_dict, save_name, "Time [hours]")
+#            plot_interval_storage(sto_dict, save_name, "Time [hours]")
     
     #%% plots a time series of abitrary length
 def plot_interval(heat, cool, power, save_name, xTitle):
@@ -354,7 +354,7 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     heat_labels = []
     heat_res_list = []
     heat_color = []
-    for device in ["heat_BOI", "heat_CHP", "heat_EH", "heat_ASHP", "dch_TES", "heat_STC"]:#, "STC_curtail"]:
+    for device in ["heat_BOI", "heat_CHP", "dch_TES"]:
         heat_res[device] = np.zeros(2*heat[device].size)
         for t in range(heat[device].size):            
             heat_res[device][2*t:2*t+2] = [heat[device][t], heat[device][t]]
@@ -371,14 +371,14 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     cool_labels = []
     cool_res_list = []
     cool_color = []
-    for device in ["cool_CC", "cool_AC", "dch_CTES"]:
+    for device in ["cool_CC", "cool_AC"]:
         cool_res[device] = np.zeros(2*cool[device].size)
         for t in range(cool[device].size):            
             cool_res[device][2*t:2*t+2] = [cool[device][t], cool[device][t]]
         cool_res_list.extend([cool_res[device].tolist()])
         cool_labels.append(label_dev[device])
         cool_color.extend([tech_color[device]])    
-    for device in ["cool_dem", "ch_CTES"]:    
+    for device in ["cool_dem"]:    
         cool_res[device] = np.zeros(2*cool[device].size)
         for t in range(cool[device].size):
             cool_res[device][2*t:2*t+2] = [cool[device][t], cool[device][t]]
@@ -388,14 +388,14 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     power_labels = []
     power_res_list = []
     power_color = []
-    for device in ["power_CHP", "power_WT", "power_PV", "power_from_grid", "dch_BAT"]:#, "PV_curtail", "WT_curtail"]:
+    for device in ["power_CHP", "power_from_grid"]:
         power_res[device] = np.zeros(2*power[device].size)
         for t in range(power[device].size):            
             power_res[device][2*t:2*t+2] = [power[device][t], power[device][t]]
         power_res_list.extend([power_res[device].tolist()])
         power_labels.append(label_dev[device])
         power_color.extend([tech_color[device]])
-    for device in ["power_dem", "power_CC", "power_EH", "power_ASHP", "ch_BAT", "power_to_grid"]:    
+    for device in ["power_dem", "power_CC", "power_to_grid"]:    
         power_res[device] = np.zeros(2*power[device].size)
         for t in range(power[device].size):
             power_res[device][2*t:2*t+2] = [power[device][t], power[device][t]]
@@ -426,7 +426,7 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     # Create second subplot: cooling balance
     plt.subplot(312, ylabel = "Cooling output in MW", xlabel = " ")
     plt.stackplot(timeTicks, np.vstack(cool_res_list), labels=cool_labels, colors=cool_color)
-    plt.plot(timeTicks, cool_res["cool_dem"]+cool_res["ch_CTES"], color=tech_color["ch_CTES"], linewidth = 3, label="CTES (charge)")
+#    plt.plot(timeTicks, cool_res["cool_dem"]+cool_res["ch_CTES"], color=tech_color["ch_CTES"], linewidth = 3, label="CTES (charge)")
     plt.plot(timeTicks,cool_res["cool_dem"], color="black", linewidth = 3, label="Cooling demand")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
     plt.xticks(np.arange(min(timeTicks), max(timeTicks)+1, 1))
@@ -435,10 +435,7 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     # Create second subplot: power balance
     plt.subplot(313, ylabel = 'Electrical power in MW', xlabel = xTitle)
     plt.stackplot(timeTicks, np.vstack(power_res_list), labels=power_labels, colors=power_color)
-    plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_EH"]+power_res["power_ASHP"]+power_res["ch_BAT"]+power_res["power_to_grid"], color="black", dashes=[3,3], linewidth = 3, label="Power to grid")
-    plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_EH"]+power_res["power_ASHP"]++power_res["ch_BAT"], linewidth = 3, label="BAT (charge)")
-    plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_EH"]+power_res["power_ASHP"], color=tech_color["power_ASHP"], linewidth = 3, label="ASHP demand")
-    plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_EH"], color=tech_color["power_EH"], linewidth = 3, label="EH demand")
+    plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_to_grid"], color="black", dashes=[3,3], linewidth = 3, label="Power to grid")
     plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"], color=tech_color["power_CC"], linewidth = 3, label="CC demand")
     plt.plot(timeTicks, power_res["power_dem"], color='black', linewidth = 3, label="Power demand")
 
@@ -456,13 +453,13 @@ def plot_interval(heat, cool, power, save_name, xTitle):
 def plot_interval_storage(M, save_name, xTitle):
     tech_color = get_tech_color()
     # Manipulate colors for storages for this plot
-    tech_color["soc_BAT"] =      (0.749, 0.749, 0.749, 1)
-    tech_color["soc_CTES"] =     (0.184, 0.459, 0.710, 0.8)
+#    tech_color["soc_BAT"] =      (0.749, 0.749, 0.749, 1)
+#    tech_color["soc_CTES"] =     (0.184, 0.459, 0.710, 0.8)
     tech_color["soc_TES"] =      (0.843, 0.059, 0.059, 0.8)
     
     # Transform data for plots
     sto_res = {}
-    for device in ["soc_TES", "soc_CTES", "soc_BAT"]:    
+    for device in ["soc_TES"]:    
         sto_res[device] = np.zeros(2*M[device].size)
         for t in range(M[device].size):
             sto_res[device][2*t:2*t+2] = [M[device][t], M[device][t]]
@@ -488,7 +485,7 @@ def plot_interval_storage(M, save_name, xTitle):
     
     # Create subplot: CTES
     plt.subplot(312, ylabel = 'State of charge in MWh', xlabel = " ")
-    plt.plot(timeTicks, sto_res["soc_CTES"], color=tech_color["soc_CTES"], linewidth=3, label="Cold thermal energy storage")
+#    plt.plot(timeTicks, sto_res["soc_CTES"], color=tech_color["soc_CTES"], linewidth=3, label="Cold thermal energy storage")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
     plt.xticks(np.arange(min(timeTicks), max(timeTicks)+1, 1))
     plt.xlim(min(timeTicks), max(timeTicks))
@@ -496,7 +493,7 @@ def plot_interval_storage(M, save_name, xTitle):
     
     # Create subplot: BAT
     plt.subplot(313, ylabel = 'State of charge in MWh', xlabel = xTitle)
-    plt.plot(timeTicks, sto_res["soc_BAT"], color=tech_color["soc_BAT"], linewidth=3, label="Battery")
+#    plt.plot(timeTicks, sto_res["soc_BAT"], color=tech_color["soc_BAT"], linewidth=3, label="Battery")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
     plt.xticks(np.arange(min(timeTicks), max(timeTicks)+1, 1))
     plt.xlim(min(timeTicks), max(timeTicks))

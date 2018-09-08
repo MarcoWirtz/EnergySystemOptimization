@@ -26,7 +26,7 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
     time_steps = range(8760)
 
     # Create set for devices
-    all_devs = ["BOI", "CHP", "EH", "ASHP", "AC", "CC", "BAT", "TES", "CTES", "PV", "STC", "WT"]       
+    all_devs = ["BOI", "CHP", "AC", "CC", "TES"]       
          
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Setting up the model
@@ -44,24 +44,26 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
             
     # Device's capacity (i.e. nominal power)
     cap = {}
-    for device in ["BOI", "CHP", "CHP_GT", "EH", "ASHP", "AC", "CC", "PV", "STC", "BAT", "TES", "CTES", "WT"]:
+    for device in ["BOI", "CHP", "AC", "CC", "TES"]:
         cap[device] = model.addVar(vtype="C", name="nominal_capacity_" + str(device))
     
-    # Gas flow to/from devices (is not a decision variable but solely depends on devices load at each time step)
+    # Gas flow to/from devices
     gas = {}
-    gas["BOI"] = {}
-    gas["CHP"] = {}
-            
+    for device in ["BOI", "CHP"]:
+        gas[device] = {}
+        for t in time_steps:
+            gas[device][t] = model.addVar(vtype="C", name="gas_" + device + "_t" + str(t))
+        
     # Eletrical power to/from devices
     power = {}
-    for device in ["CHP", "EH", "ASHP", "PV", "WT", "CC", "from_grid", "to_grid"]:
+    for device in ["CHP", "CC", "from_grid", "to_grid"]:
         power[device] = {}
         for t in time_steps:
             power[device][t] = model.addVar(vtype="C", name="power_" + device + "_t" + str(t))
        
     # Heat to/from devices
     heat = {}
-    for device in ["BOI", "CHP", "EH", "ASHP", "STC", "AC"]:
+    for device in ["BOI", "CHP", "AC"]:
         heat[device] = {}
         for t in time_steps:
             heat[device][t] = model.addVar(vtype="C", name="heat_" + device + "_t" + str(t))
@@ -73,13 +75,12 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
         for t in time_steps:
             cool[device][t] = model.addVar(vtype="C", name="cool_" + device + "_t" + str(t))
     
-        
     # Storage decision variables
     ch = {}  # Energy flow to charge storage device
     dch = {} # Energy flow to discharge storage device
     soc = {} # State of charge
     
-    for device in ["BAT", "TES", "CTES"]:
+    for device in ["TES"]:
         ch[device] = {}
         dch[device] = {}
         soc[device] = {}
@@ -91,7 +92,7 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
         
     # Objective functions
     obj = {}
-    set_obj = ["tac", "co2_onsite", "co2_net", "co2_gross", "invest", "power_from_grid", "net_power_from_grid", "renewables_abs"]
+    set_obj = ["tac", "co2_gross", "power_from_grid", "net_power_from_grid"]
     for k in set_obj:
         obj[k] = model.addVar(vtype="C", lb=-gp.GRB.INFINITY, name="obj_" + k)    
       
@@ -114,17 +115,12 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
     # Add constraints
     
     #%% CONTINUOUS SIZING OF DEVICES: minimum capacity <= capacity <= maximum capacity
-    for device in ["ASHP", "WT", "BAT", "TES", "CTES"]:
+    for device in ["TES"]:
         model.addConstr(cap[device] <= x[device] * devs[device]["max_cap"])
         model.addConstr(cap[device] >= x[device] * devs[device]["min_cap"])
     
-    # for PV and STC the limiting factor is the roof area
-    model.addConstr(sum(cap[device] / devs[device]["power_per_area"] for device in ["PV", "STC"]) <= param["pv_stc_area"])
-    for device in ["PV", "STC"]:
-        model.addConstr(cap[device] / devs[device]["power_per_area"] <= param["pv_stc_area"] * x[device])
-    
     for t in time_steps:
-        for device in ["BOI", "EH", "ASHP", "STC"]:
+        for device in ["BOI"]:
             model.addConstr(heat[device][t] <= cap[device])
             
         for device in ["CHP"]:
@@ -140,47 +136,29 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
         
         # Combined heat and power
         model.addConstr(power["CHP"][t] == heat["CHP"][t] / devs["CHP"]["eta_th"] * devs["CHP"]["eta_el"])
-        gas["CHP"][t] = heat["CHP"][t] / devs["CHP"]["eta_th"]
-            
+        model.addConstr(gas["CHP"][t] == heat["CHP"][t] / devs["CHP"]["eta_th"])
         
-        # Electrical heater
-        model.addConstr(heat["EH"][t] == power["EH"][t] * devs["EH"]["eta_th"])
-
-        # Air source heat pump
-        model.addConstr(heat["ASHP"][t] == power["ASHP"][t] * devs["ASHP"]["COP"][t])
-       
         # Compression chiller
         model.addConstr(cool["CC"][t] == power["CC"][t] * devs["CC"]["COP"])  
 
         # Absorption chiller
         model.addConstr(cool["AC"][t] == heat["AC"][t] * devs["AC"]["eta_th"])
 
-        # Photovoltaic (relaxed constraints: curtailment possible)
-        model.addConstr(power["PV"][t] <= devs["PV"]["power"][t] * cap["PV"])
-
-        # Solar thermal collector (relaxed constraints: curtailment possible)
-        model.addConstr(heat["STC"][t] <= devs["STC"]["heat"][t] * cap["STC"])
-
-        # Wind turbine (relaxed constraints: curtailment possible)
-        model.addConstr(power["WT"][t] <= devs["WT"]["power"][t] * cap["WT"])
-        
     #%% ENERGY BALANCES
     for t in time_steps:
         # Heat balance
-        model.addConstr(heat["BOI"][t] + heat["CHP"][t] + heat["ASHP"][t] + heat["EH"][t] 
-                        + heat["STC"][t] + dch["TES"][t] == dem["heat"][t] + heat["AC"][t] + ch["TES"][t])
+        model.addConstr(heat["BOI"][t] + heat["CHP"][t] + dch["TES"][t] == dem["heat"][t] + heat["AC"][t] + ch["TES"][t])
 
     for t in time_steps:
         # Electricity balance
-        model.addConstr(power["WT"][t] + power["CHP"][t] + power["from_grid"][t] + power["PV"][t] + dch["BAT"][t]
-                        == dem["power"][t] + power["to_grid"][t] + power["EH"][t] + power["ASHP"][t] + power["CC"][t] + ch["BAT"][t])
+        model.addConstr(power["CHP"][t] + power["from_grid"][t] == dem["power"][t] + power["to_grid"][t] + power["CC"][t])
 
     for t in time_steps:
         # Cooling balance
-        model.addConstr(cool["AC"][t] + cool["CC"][t] + dch["CTES"][t] == dem["cool"][t] + ch["CTES"][t])    
+        model.addConstr(cool["AC"][t] + cool["CC"][t] == dem["cool"][t])    
     
     #%% STORAGE DEVICES
-    for device in ["BAT", "TES", "CTES"]:  
+    for device in ["TES"]:  
         # Cyclic condition
         model.addConstr(soc[device][len(time_steps)] == soc[device][0])
 
@@ -223,17 +201,8 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
     model.addConstr(obj["tac"] == sum(c_inv[dev] for dev in all_devs) + sum(c_om[dev] for dev in all_devs)  
                                   + gas_total * param["price_gas"] + from_grid_total * param["price_el"] - to_grid_total * param["revenue_feed_in"], "sum_up_TAC")
     
-    # ANNUAL CO2 EMISSIONS: Without credit for avoided burden due to exchange with national grid
-    model.addConstr(obj["co2_onsite"] == gas_total * param["gas_CO2_emission"], "sum_up_onsite_CO2_emissions")
-
-    # ANNUAL CO2 EMISSIONS: Implicit emissions by power supply from national grid is penalized, feed-in is „rewarded“
-    model.addConstr(obj["co2_net"] == gas_total * param["gas_CO2_emission"] + (from_grid_total - to_grid_total) * param["grid_CO2_emission"], "sum_up_net_CO2_emissions")
-    
     # ANNUAL CO2 EMISSIONS: Implicit emissions by power supply from national grid is penalized, feed-in is ignored
     model.addConstr(obj["co2_gross"] == gas_total * param["gas_CO2_emission"] + from_grid_total * param["grid_CO2_emission"], "sum_up_gross_CO2_emissions")
-    
-    # INVESTMENT
-    model.addConstr(obj["invest"] == sum(c_inv[dev] for dev in all_devs))
     
     # POWER PROVIDED BY GRID
     model.addConstr(obj["power_from_grid"] == from_grid_total)
@@ -241,8 +210,6 @@ def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
     # NET POWER PROVIDED BY GRID
     model.addConstr(obj["net_power_from_grid"] == from_grid_total - to_grid_total)
     
-    # RENEWABLE GENERATION
-    model.addConstr(obj["renewables_abs"] == sum((power["WT"][t] + power["PV"][t] + heat["STC"][t]) for t in time_steps))
     
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Set model parameters and execute calculation
@@ -299,13 +266,13 @@ def save_results(devs, param, dem, model, obj_fn, obj_eps, eps_constr, dir_resul
     model.write(dir_results + "\model.prm")
     model.write(dir_results + "\model.sol")
     
-     # Save demands
+    # Save demands
     with open(dir_results + "\demands.txt", "w") as outfile:
         for com in dem.keys():
             for t in range(8760):
                 outfile.write(com + "_t" + str(t) + " " + str(dem[com][t]) + "\n")
                 
-        # Write further information in txt-file
+    # Write further information in txt-file
     with open(dir_results + "\meta_results.txt", "w") as outfile:
         outfile.write("Runtime " + str(round(model.Runtime,6)) + "\n")
         outfile.write("ObjectiveValue " + "{0}".format(model.ObjVal) + "\n")
