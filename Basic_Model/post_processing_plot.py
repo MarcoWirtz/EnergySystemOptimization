@@ -326,6 +326,55 @@ def plot_time_series(time_series, plot_mode, dir_results):
                 sto_dict[dev] = H[dev][d]
             save_name = dir_results + "//" + str(month_num) + "_" + month_name + "//" + month_name + "_" + str(day_num) + "_Storage"
 #            plot_interval_storage(sto_dict, save_name, "Time [hours]")
+            
+def plot_capacity(cap, time_series, dir_results):
+    
+    # Storages should not be visualized due to scaling
+    del cap["TES"]
+    
+    tech_color = get_tech_color()
+    color_list = [tech_color[dev] for dev in cap.keys()]
+    cap_list = [round(cap[dev],3) for dev in cap.keys()]
+    
+    load_factor = {}
+    for dev in cap.keys():
+        if dev == "BOI":
+            load_factor[dev] = np.mean(time_series["heat_BOI"])
+        elif dev == "CC":
+            load_factor[dev] = np.mean(time_series["cool_CC"])
+        elif dev == "CHP":
+            load_factor[dev] = np.mean(time_series["power_CHP"])
+        elif dev == "AC":
+            load_factor[dev] = np.mean(time_series["cool_AC"])
+    load_factor_list = [round(load_factor[dev]/cap[dev],3) for dev in cap.keys()]
+    
+    # Create new figure
+    fig = plt.figure(figsize=(10,5))
+    plt.rc('font', size=15)
+    fig.add_subplot(211, ylabel="Capacity in MW")
+    plt.bar(range(len(cap.keys())), cap_list, 1, color=color_list, linewidth=1, edgecolor='black')
+    plt.xticks(range(len(cap.keys())), cap.keys())
+    
+    plt.xlim([-0.5,len(cap.keys())-0.5])
+    plt.xticks(fontsize=10)
+    blank_row = ["" for i in range(len(cap_list))]
+    data_table = plt.table(cellText=[blank_row,blank_row,blank_row,cap_list,blank_row,load_factor_list],
+                          cellLoc='center',
+                          rowLabels=["","","","Capacity","","Load factor"],
+                          loc='bottom')
+    
+    table_props = data_table.properties()
+    table_cells = table_props['child_artists']
+    for cell in table_cells:
+        for key, cell in data_table.get_celld().items():
+            cell.set_linewidth(0)
+    
+    # Save plot
+    file_name = dir_results + "//Installed_capacity"
+    plt.savefig(file_name + ".png", dpi = 200, format = "png", bbox_inches="tight", pad_inches=0.1)
+#    plt.savefig(file_name + ".pdf", dpi = 200, format = "pdf", bbox_inches="tight", pad_inches=0.1)
+    plt.clf()
+    plt.close()
     
     #%% plots a time series of abitrary length
 def plot_interval(heat, cool, power, save_name, xTitle):
@@ -412,8 +461,8 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     plt.rcParams.update({'font.size': 14})
 
     # Create subplot: heat balance
-    plt.subplot(311, ylabel = "Heating output in MW", xlabel = " ")
-    plt.stackplot(timeTicks, np.vstack(heat_res_list), labels=heat_labels, colors=heat_color)
+    ax = plt.subplot(311, ylabel = "Heating output in MW", xlabel = " ")
+    ax.stackplot(timeTicks, np.vstack(heat_res_list), labels=heat_labels, colors=heat_color)
     plt.plot(timeTicks, heat_res["heat_dem"]+heat_res["heat_AC"]+heat_res["ch_TES"], color=tech_color["ch_TES"], linewidth = 3, label="HTES (charge)")
     plt.plot(timeTicks, heat_res["heat_dem"]+heat_res["heat_AC"], color=tech_color["heat_AC"], linewidth = 3, label="AC demand")
     plt.plot(timeTicks, heat_res["heat_dem"], color="black", linewidth = 3, label="Heating demand")
@@ -424,17 +473,17 @@ def plot_interval(heat, cool, power, save_name, xTitle):
     plt.tight_layout(h_pad=6)
 
     # Create second subplot: cooling balance
-    plt.subplot(312, ylabel = "Cooling output in MW", xlabel = " ")
-    plt.stackplot(timeTicks, np.vstack(cool_res_list), labels=cool_labels, colors=cool_color)
+    ax = plt.subplot(312, ylabel = "Cooling output in MW", xlabel = " ")
+    ax.stackplot(timeTicks, np.vstack(cool_res_list), labels=cool_labels, colors=cool_color)
 #    plt.plot(timeTicks, cool_res["cool_dem"]+cool_res["ch_CTES"], color=tech_color["ch_CTES"], linewidth = 3, label="CTES (charge)")
     plt.plot(timeTicks,cool_res["cool_dem"], color="black", linewidth = 3, label="Cooling demand")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
     plt.xticks(np.arange(min(timeTicks), max(timeTicks)+1, 1))
     plt.xlim(min(timeTicks), max(timeTicks))
 
-    # Create second subplot: power balance
-    plt.subplot(313, ylabel = 'Electrical power in MW', xlabel = xTitle)
-    plt.stackplot(timeTicks, np.vstack(power_res_list), labels=power_labels, colors=power_color)
+    # Create third subplot: power balance
+    ax = plt.subplot(313, ylabel = 'Electrical power in MW', xlabel = xTitle)
+    ax.stackplot(timeTicks, np.vstack(power_res_list), labels=power_labels, colors=power_color)
     plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"]+power_res["power_to_grid"], color="black", dashes=[3,3], linewidth = 3, label="Power to grid")
     plt.plot(timeTicks, power_res["power_dem"]+power_res["power_CC"], color=tech_color["power_CC"], linewidth = 3, label="CC demand")
     plt.plot(timeTicks, power_res["power_dem"], color='black', linewidth = 3, label="Power demand")

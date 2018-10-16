@@ -17,7 +17,7 @@ obj_1 = "tac"          # First objective function
 obj_2 = "co2_gross"    # Second objective function
 
 # Number of pareto points for each objective function in epsilon constraint procedure
-pareto_points = 4
+pareto_points = 1
 
 # Create result directory
 dir_results = str(os.path.dirname(os.path.realpath(__file__))) + "\\Results\\" + str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + "_multi-objective__" + obj_1 + "__" + obj_2)
