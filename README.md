@@ -16,7 +16,20 @@ Some Python code:
 In the folder `Basic_Model` is a basic optimization model written in Python/Gurobi along with its pre-processing and post-processing routines. You can download it and run the file `run_multi_objective.py`.
 
 ### Type day clustering (reasonable option)
-In energy system simulations and optimizations approaches often a full year is considered. In many models an hourly time resolution is chosen, which results in 8760 time steps for which steady state conditions are assumed. However, many MILPs are complex and comprise many continuous and binary decision variables for each time step. Therefore, a consideration all 8760 time steps leads to huge computation times. In order to reduce the computational complexity, often so-called *type days* are introduced. All 365 days of a year are reduced to a small number of typical days which represent the entire year. Detailed studies, like [1]  https://pdfs.semanticscholar.org/aae0/60d220ca9490c8123abaade3d97ff674c266.pdf
+In energy system simulations and optimizations approaches often a full year is considered. In many models an hourly time resolution is chosen, which results in 8760 time steps for which steady state conditions are assumed. However, many MILPs are complex and comprise many continuous and binary decision variables for each time step. Therefore, a consideration all 8760 time steps leads to huge computation times. In order to reduce the computational complexity, often so-called *type days* are introduced. All 365 days of a year are reduced to a small number of typical days which represent the entire year. Detailed studies, like [Schütz et al., 2016](https://pdfs.semanticscholar.org/aae0/60d220ca9490c8123abaade3d97ff674c266.pdf) and [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) investigate the effect of introducing type days in the optimization model.
+
+A basic model utilizing type days is presented in the folder `Basic_Model_type_days`. Here a k-medioids clustering approach is used to cluster 365 days to a specified number of type days. The clustering is done regarding specifiec time serieses. If now renewable energies are considered, the clusteirng of energy demands, such as heating, cooling and electricity demands, is sufficient. If renwable energies play an important role within the energy system, weather data has to be considered in the clustering process as well.
+
+The clustering process is done during the pre-processing in Python. The model is then build up with the clustered demand (and weather data) time serieses in the Gurobi interface. The clustering process represents a seperate optimization problem, which consists of a large number of binary variables. Therefore, full convergence cannot be realized. However, the problem converges fast and small gaps are reached within a few seconds.
+
+The uploaded model in the folder `Basic_Model_type_days` was used to conduct a small parameter study, how the computation time and the optimal energy system changes by varying the number of type days. In [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) a number of XX type days is considered a good trade-off between computation time and accuracy. However, the number strongly depends on the underlying MILP. The parameter study was conducted for a single-objective optimization (total annualized costs).
+
+| # Type days | Objective function (TAC) | Boiler capacity (MW) | CHP capacity (MW) | Compression chiller capacity (MW) | Absorption chiller capacity (MW) |
+| -- |:-- | -- |-- | --:| --:|
+| # | TAC | Boiler | CHP | CC | AC |
+| # | TAC | Boiler | CHP | CC | AC |
+| # | TAC | Boiler | CHP | CC | AC |
+
 
 ### Discrete sizing (questionable)
 In some optimization models, the rated power of a device is not modeled as a continuous decision variable. Instead, binary variables are used to describe the purchase decision of discrete devices. Reason for this approach is that in practice devices cannot be purchased with every possible rated power, but only discrete device capacities can be purchased. 
