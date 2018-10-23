@@ -1,5 +1,5 @@
 # Models and tools for Energy System Optimization
-This repo is a collection of (MILP) models and other tools for mathematical optimization methods in the field of energy systems.
+This repo is a collection of (MILP) models and other tools for mathematical optimization methods in the field of energy supply systems.
 
 ### Content
 
@@ -13,10 +13,10 @@ Some Python code:
 
 
 ### Basic model
-`Basic_Model` is a basic optimization model together the pre-processing and post-processing workflow in Python.
+In the folder `Basic_Model` is a basic optimization model written in Python/Gurobi along with its pre-processing and post-processing routines. You can download it and run the file `run_multi_objective.py`.
 
 ### Type day clustering (reasonable option)
-
+In energy system simulations and optimizations approaches often a full year is considered. In many models an hourly time resolution is chosen, which results in 8760 time steps for which steady state conditions are assumed. However, many MILPs are complex and comprise many continuous and binary decision variables for each time step. Therefore, a consideration all 8760 time steps leads to huge computation times. In order to reduce the computational complexity, often so-called *type days* are introduced. All 365 days of a year are reduced to a small number of typical days which represent the entire year. Detailed studies, like [1]  https://pdfs.semanticscholar.org/aae0/60d220ca9490c8123abaade3d97ff674c266.pdf
 
 ### Discrete sizing (questionable)
 In some optimization models, the rated power of a device is not modeled as a continuous decision variable. Instead, binary variables are used to describe the purchase decision of discrete devices. Reason for this approach is that in practice devices cannot be purchased with every possible rated power, but only discrete device capacities can be purchased. 
