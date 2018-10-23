@@ -31,6 +31,11 @@ The uploaded model in the folder `Basic_Model_type_days` was used to conduct a s
 | # | TAC | Boiler | CHP | CC | AC |
 
 
+### Piece-wise linear investment (reasonable option)
+no many binary variables are required
+important influence on he optimiation results
+TES als Beispiel, 
+
 ### Discrete sizing (questionable)
 In some optimization models, the rated power of a device is not modeled as a continuous decision variable. Instead, binary variables are used to describe the purchase decision of discrete devices. Reason for this approach is that in practice devices cannot be purchased with every possible rated power, but only discrete device capacities can be purchased. 
 From my point of view, for large energy systems on district scale this aspect can be neglected since it describes a level of detail which cannot hold for other substantial aspects of the optimization model and therefore suggest an apparent accuracy that does not hold for the rest of the optimization model. Therefore, usually continuous variable for the rated power of components is sufficient. Moreover, binary decision variables increase the computation time significantly.
@@ -43,6 +48,9 @@ for device in devs.keys():
     for comp in range(number_comp[device]):
         x[device][comp] = model.addVar(vtype="B", name="x_" + str(device) + "_comp" + str(comp))
 ```
+
+### Minimal part load (questionable) 
+Energy conversion units normally operated within well-defined load ranges. For example, a combined heat and power unit cannot be operated at 10 % of its rated-power. If the operation of a device is modelled to  In order to model the minimal part-load limits of a technology more accurately, especially one approach often widely found in the literature. In this approach further binary variables are introduced for each time step and each device. Depending on the number of time steps that are considered this leads to a significant increase of the model complexity. As usually `x` represents a binary describing if a device is purchased or not, `y` represents if the technology is activated/operated a specific time step or not. Here, `y=1` presents...
 
 ### Part load efficiency (questionable) 
 In optimization models the operation of the devices is described in very detailed way. One aspect that is often addressed is part-load behavior of devices. For this purpose, binary variables are introduced. Fact sheets are used to derive piece-wise linear function within  performance charts. Its doubtful whether the detailed description of the operation is really reasonable since there are numerous aspects within the optimization model which have a much higher impact on the results but are modeled with much less detail. Furthermore, usually hourly time steps are employed which also influence the operation. For example, if the optimization result suggest to run an engine for one hour at half load and then shut it down, in practice this could be easily realized by running the engine half an hours at full laod and utilize possible storage capacities (which has been installed anyways). This way of modeling part-load behavior is also expensive from a computation point of view as it requires more than one extra binary variable in every time step. 
@@ -69,10 +77,6 @@ Nevertheless, if only part-load behavior should be taken into account, this can 
 ```
 BOI als Beispiel, AbbildungsDoku mit Diagramm, Kurzergebnisse (Vergleich zu konstantem eta)
 
-### Piece-wise linear investment (reasonable option)
-no many binary variables are required
-important influence on he optimiation results
-TES als Beispiel, 
 
 ### Objective functions
 #### Total annualized costs
