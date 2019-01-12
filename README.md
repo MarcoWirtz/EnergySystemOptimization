@@ -1,20 +1,18 @@
 # Models and tools for Energy System Optimization
-This repo is a collection of (MILP) models and other tools for mathematical optimization methods in the field of energy supply systems.
+This repo is a collection of typical modelling approaches frequently used for Mixed-Interger Linear Programming (MILP) formulations in the field of designing energy supply systems.
 
 ### Content
 
-- [Models](./README.md#models)
+
+- [Example MILP model](./README.md#models)
+- [Modeling approaches](./README.md#models)
 - [Useful tools](./README.md#useful-tools)
 - [Documentation](./README.md#documentation)
 
-## Models
-
-Some Python code:
-
-
-### Basic model
+## Example MILP model
 In the folder `Basic_Model` is a basic optimization model written in Python/Gurobi along with its pre-processing and post-processing routines. You can download it and run the file `run_multi_objective.py`.
 
+## Modeling approaches 
 <img src="https://github.com/MarcoWirtz/EnergySystemOptimization/blob/master/images/level_of_detail.png" width="400">
 Other features: max starts per year (CHP, AC, ...), discrete sizing, ((Ramp rates)), on/off-switch or free modulation; coraser time reolution (2 h, 4 h), costs for start up of CHP (https://www.sciencedirect.com/science/article/pii/S0306261912006551)
 
@@ -25,14 +23,7 @@ A basic model utilizing type days is presented in the folder `Basic_Model_type_d
 
 The clustering process is done during the pre-processing in Python. The model is then build up with the clustered demand (and weather data) time serieses in the Gurobi interface. The clustering process represents a seperate optimization problem, which consists of a large number of binary variables. Therefore, full convergence cannot be realized. However, the problem converges fast and small gaps are reached within a few seconds.
 
-The uploaded model in the folder `Basic_Model_type_days` was used to conduct a small parameter study, how the computation time and the optimal energy system changes by varying the number of type days. In [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) a number of XX type days is considered a good trade-off between computation time and accuracy. However, the number strongly depends on the underlying MILP. The parameter study was conducted for a single-objective optimization (total annualized costs).
-
-| # Type days | Objective function (TAC) | Boiler capacity (MW) | CHP capacity (MW) | Compression chiller capacity (MW) | Absorption chiller capacity (MW) |
-| -- |:-- | -- |-- | --:| --:|
-| # | TAC | Boiler | CHP | CC | AC |
-| # | TAC | Boiler | CHP | CC | AC |
-| # | TAC | Boiler | CHP | CC | AC |
-
+In [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) a number of XX type days is considered a good trade-off between computation time and accuracy. However, the number strongly depends on the underlying MILP. The parameter study was conducted for a single-objective optimization (total annualized costs).
 
 ### Piece-wise linear investment (reasonable option)
 no many binary variables are required
@@ -82,6 +73,7 @@ BOI als Beispiel, AbbildungsDoku mit Diagramm, Kurzergebnisse (Vergleich zu kons
 
 
 ### Objective functions
+<Introduction>
 #### Total annualized costs
 ```python
 model.addConstr(obj["tac"] == sum(c_inv[dev] for dev in all_devs) + sum(c_om[dev] for dev in all_devs)  
@@ -117,30 +109,17 @@ model.addConstr(obj["co2_net"] == gas_total * param["gas_CO2_emission"] + (from_
 ```    
 
 #### Annualized investment
-```python
-model.addConstr(obj["ann_invest"] == sum(c_inv[dev] for dev in all_devs))
-```
+
 
 #### Power from grid
-```python
-model.addConstr(obj["power_from_grid"] == sum(power["from_grid"][t] for t in time_steps))
-```
+
 
 #### Net power from grid
-```python
-model.addConstr(obj["net_power_from_grid"] == from_grid_total - to_grid_total)
-```
-with 
-```python
-from_grid_total = sum(power["from_grid"][t] for t in time_steps)
-to_grid_total = sum(power["to_grid"][t] for t in time_steps)
-```
+
 
 #### Renewable generation
 Absolute produced energy by renewable energies. (*Remark: Heat should be counted different than electricity.*)
-```python
-model.addConstr(obj["renewables_abs"] == sum(power["WT"][t] + power["PV"][t] + heat["STC"][t] for t in time_steps))
-``` 
+
 
 ## Visualization
 
