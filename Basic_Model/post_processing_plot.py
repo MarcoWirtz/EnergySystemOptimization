@@ -553,6 +553,32 @@ def plot_interval_storage(M, save_name, xTitle):
 #    print("\nPlot created: " + save_name +".png\n")
     plt.clf()
     plt.close()
+	
+def visualize_LP_matrix(model, dir_results):
+    import pandas as pd
+    # Create LP Matrix Plot
+    nzs = pd.DataFrame(get_matrix_coos(model), columns=['row_idx', 'col_idx', 'coeff'])
+    plt.scatter(nzs.col_idx, nzs.row_idx, marker='.', lw=0)
+    plt.title("Matrix of (relaxed) Linear Program")
+    plt.xlabel("Decision variables")
+    plt.ylabel("Equations")
+    plt.xlim(left=0)
+    plt.ylim(bottom=0)
+    plt.savefig(fname = dir_results + "//LP_matrix.png", dpi = 200, format = "png", bbox_inches="tight", pad_inches=0.1) #transparent = True,
+    np.savetxt(dir_results + "//LP_matrix_coefficients.txt", nzs, fmt='%.2f')
+    
+def get_expr_coos(expr, var_indices):
+    for i in range(expr.size()):
+        dvar = expr.getVar(i)
+        yield expr.getCoeff(i), var_indices[dvar]
+        
+def get_matrix_coos(model):
+    dvars = model.getVars()
+    constrs = model.getConstrs()
+    var_indices = {v: i for i, v in enumerate(dvars)}
+    for row_idx, constr in enumerate(constrs):
+        for coeff, col_idx in get_expr_coos(model.getRow(constr), var_indices):
+            yield row_idx, col_idx, coeff
 
     
 def get_tech_color():

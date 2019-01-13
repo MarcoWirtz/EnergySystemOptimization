@@ -14,6 +14,7 @@ import parameter
 import json
 import time
 
+
 def run_optim(obj_fn, obj_eps, eps_constr, dir_results):
     assert (obj_eps == "" and eps_constr == "") or (obj_eps != "" and eps_constr != ""), "If there is a bounded objective function, an epsilon constraint should be given."
     
@@ -282,5 +283,10 @@ def save_results(devs, param, dem, model, obj_fn, obj_eps, eps_constr, dir_resul
         outfile.write("ObjectiveFunction " + obj_fn + "\n")
         outfile.write("BoundedFunction " + obj_eps + "\n")
         outfile.write("EpsilonConstraint " + str(eps_constr) + "\n\n")
+	
+    plot_LP_matrix = 0
+    if plot_LP_matrix == 1:
+        import post_processing_plot
+        post_processing_plot.visualize_LP_matrix(model, dir_results)
                     
     print("\nResult files (parameter.json, results.txt, demands.txt, model.lp, model.rpm, model.sol) saved in " + dir_results)
