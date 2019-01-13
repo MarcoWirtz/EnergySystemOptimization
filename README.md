@@ -57,24 +57,20 @@ for device in ["BOI"]:
     inv[device] = sum(lin[device][i] * devs[device]["inv_i"][i] for i in range(len(devs[device]["cap_i"]))) 
 ```       
 
-### Discrete sizing (questionable)
-In some optimization models, the rated power of a device is not modeled as a continuous decision variable. Instead, binary variables are used to describe the purchase decision of discrete devices. Reason for this approach is that in practice devices cannot be purchased with every possible rated power, but only discrete device capacities can be purchased. 
-From my point of view, for large energy systems on district scale this aspect can be neglected since it describes a level of detail which cannot hold for other substantial aspects of the optimization model and therefore suggest an apparent accuracy that does not hold for the rest of the optimization model. Therefore, usually continuous variable for the rated power of components is sufficient. Moreover, binary decision variables increase the computation time significantly.
-Nevertheless, if only discrete sizing of devices should be taken into account, this can be done as follows:
+### Discrete sizing
+In some optimization models, the rated power of a component is not modeled as continuous decision variable. Instead, discrete component sizes are introduced. The component size is then described by binary variables which indicate the purchase decision of a discrete component size. Reason for this approach is that in practice components cannot be purchased with every rated power. Manufacturer portfolios only offer discrete component capacities of their products. 
+From my point of view, for large energy systems on district scale, the fact that components are only available in discrete sizes can be neglected. Usually continuous variables for the rated power of components are sufficient. Moreover, binary decision variables increase the computation time significantly.
+
+
+### Minimal part load
+Energy conversion units normally run within a well-defined load range. For example, a combined heat and power unit cannot be operated at 5 % of its rated-power. In order to model the minimal part-load limits of a technology, this is usually done by the following formulation: Binary variables are introduced for every time step and every component. Depending on the number of time steps that are considered this leads to a significant increase of the model complexity. In the following example `y_HP` indicates if the component (here a heat pump) is activated/operated in a specific time step or not. If for one time step the heat pump runs (```y_HP = 1```), then the variable ```cap_hr_runs``` is equal to the variable ```cap```, which indicates the capacity/rated power of the heat pump. In this case, the heat output is bounded between a relative load of 0.2 and 1. If the heat pump does not run (```y_HP = 0```), then ```cap_hr_runs``` is equal to 0 and, thus, the heat output of the heat pump is forced to 0 as well (last equation).
 ```python
-# Purchase decision binary variables (1 if device is installed, 0 otherwise)
-x = {}
-for device in devs.keys():
-    x[device] = {}
-    for comp in range(number_comp[device]):
-        x[device][comp] = model.addVar(vtype="B", name="x_" + str(device) + "_comp" + str(comp))
+model.addConstr(cap_hp_runs[t] <= y_HP[t] * M) # big M formulation
+model.addConstr(0 <= cap[device] - cap_hp_runs[t])
+model.addConstr(cap[device] - cap_hp_runs[t] <= (1 - y_HP[t]) * M) # big M formulation
+model.addConstr(0.2 * cap_hp_runs[t] <= heat[device][t])
+model.addConstr(heat[device][t] <= cap_hp_runs[t])
 ```
-
-### Minimal part load (questionable) 
-Energy conversion units normally operated within well-defined load ranges. For example, a combined heat and power unit cannot be operated at 10 % of its rated-power. If the operation of a device is modelled to  In order to model the minimal part-load limits of a technology more accurately, especially one approach often widely found in the literature. In this approach further binary variables are introduced for each time step and each device. Depending on the number of time steps that are considered this leads to a significant increase of the model complexity. As usually `x` represents a binary describing if a device is purchased or not, `y` represents if the technology is activated/operated a specific time step or not. Here, `y=1` presents...
-
-
-
 
 ### Part load efficiency
 Sometimes, MILP formulations are supposed to describe the operation of a component in detailed way. One often considered aspect is part-load behavior of components. For this purpose, binary variables are introduced. Fact sheets are used to derive piece-wise linear function within  performance charts. For modeling part-load efficiencies help variables ```lin``` for every time step and every component are introduced. In the following an example model for a boiler (BOI) is given. Here, the help variables connect the heat output with the gas output. The variable ```y``` indicates for every time step if the component is running or not.  
