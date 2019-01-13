@@ -73,28 +73,22 @@ for device in devs.keys():
 ### Minimal part load (questionable) 
 Energy conversion units normally operated within well-defined load ranges. For example, a combined heat and power unit cannot be operated at 10 % of its rated-power. If the operation of a device is modelled to  In order to model the minimal part-load limits of a technology more accurately, especially one approach often widely found in the literature. In this approach further binary variables are introduced for each time step and each device. Depending on the number of time steps that are considered this leads to a significant increase of the model complexity. As usually `x` represents a binary describing if a device is purchased or not, `y` represents if the technology is activated/operated a specific time step or not. Here, `y=1` presents...
 
-### Part load efficiency (questionable) 
-In optimization models the operation of the devices is described in very detailed way. One aspect that is often addressed is part-load behavior of devices. For this purpose, binary variables are introduced. Fact sheets are used to derive piece-wise linear function within  performance charts. Its doubtful whether the detailed description of the operation is really reasonable since there are numerous aspects within the optimization model which have a much higher impact on the results but are modeled with much less detail. Furthermore, usually hourly time steps are employed which also influence the operation. For example, if the optimization result suggest to run an engine for one hour at half load and then shut it down, in practice this could be easily realized by running the engine half an hours at full laod and utilize possible storage capacities (which has been installed anyways). This way of modeling part-load behavior is also expensive from a computation point of view as it requires more than one extra binary variable in every time step. 
-Nevertheless, if only part-load behavior should be taken into account, this can be done as follows:
+
+
+
+### Part load efficiency
+Sometimes, MILP formulations are supposed to describe the operation of a component in detailed way. One often considered aspect is part-load behavior of components. For this purpose, binary variables are introduced. Fact sheets are used to derive piece-wise linear function within  performance charts. For modeling part-load efficiencies help variables ```lin``` for every time step and every component are introduced. In the following an example model for a boiler (BOI) is given. Here, the help variables connect the heat output with the gas output. The variable ```y``` indicates for every time step if the component is running or not.  
 ```python
-# Linearization of part-load behavior
-    for device in ["BOI","CHP"]:
-        for comp in range(number_comp[device]):
-            for t in time_steps:
-                model.addConstr(q_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["q"][i]
-                                                     for i in range(number_nodes[device][comp])))
-                model.addConstr(g_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["g"][i]
-                                                     for i in range(number_nodes[device][comp])))
-
-                model.addConstr(y[device][comp][t] == sum(lin[device][comp][t][i] for i in range(number_nodes[device][comp])))
-                model.addSOS(gp.GRB.SOS_TYPE2, [lin[device][comp][t][i] for i in range(number_nodes[device][comp])])
-
-    for device in ["CHP"]:
-        for comp in range(number_comp[device]):
-            for t in time_steps:
-                model.addConstr(el_flow[device][comp][t] == sum(lin[device][comp][t][i] * devs[device][comp]["el"][i]
-                                                     for i in range(number_nodes[device][comp])), "electrical_power_" + str(device) + "_comp" + str(comp) + "_t" + str(t))
+for device in ["BOI"]:
+    for t in time_steps:
+        model.addConstr(heat[device][t] == sum(lin[device][t][i] * devs[device]["heat"][i]
+                                               for i in range(number_nodes[device])))
+        model.addConstr(gas[device][t] == sum(lin[device][t][i] * devs[device]["gas"][i]
+                                              for i in range(number_nodes[device])))
+        model.addConstr(y[device][t] == sum(lin[device][t][i] for i in range(number_nodes[device])))
+        model.addSOS(gp.GRB.SOS_TYPE2, [lin[device][t][i] for i in range(number_nodes[device])])
 ```
+In many models, it is doubtful whether the detailed description of the operation is really reasonable since there are numerous aspects within the optimization model which have a much higher impact on the results but are modeled with much less detail. For example, usually hourly time steps are employed which affect the operation. For example, if the optimization results suggest running a component for one hour at half load and then shut it down, in practice this could be easily realized by running the engine half an hour at full laod and utilize possible storage capacities (which might have been installed anyways). The modeling of part-load behavior is expensive from a computation point of view as it requires more than one extra binary variable in every time step.
 
 ### Further model variations
 In scientific literature further formulations has been introduced which try to model the components performance in more detail. These approaches comprise:
