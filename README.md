@@ -3,7 +3,6 @@ This repo is a collection of typical modelling approaches frequently used for Mi
 
 ### Content
 
-
 - [Example MILP model](./README.md#models)
 - [Modeling approaches](./README.md#models)
 - [Useful tools](./README.md#useful-tools)
@@ -11,6 +10,25 @@ This repo is a collection of typical modelling approaches frequently used for Mi
 
 ## Example MILP model
 In the folder `Basic_Model` is a basic optimization model written in Python/Gurobi along with its pre-processing and post-processing routines. You can download it and run the file `run_multi_objective.py`.
+
+As a result of the optimization workflow four files are created:
+- All decision variables are saved in `model.sol` (created by Gurobi)
+- All parameter regarding the technologies (efficiency, investment, etc.) are saved in `parameter_dev.json`
+- All further parameter (interest rate, costs for natural gas, ...) are saved in `parameter.txt`
+- Demand time series are saved in `demands.txt`
+
+The visualization methods "post_processing.py" presented below use these output files to create illustrative plots to visualize and analyse the numeric results. Among others one plot shows the Yearly plot (averaged over months) (1 plot)
+#### Monthly plot (averaged over days) (12 plots)
+#### Daily plot (365 plots)
+#### Carpet plot
+#### Box plot (daily profile)
+#### Box plot (seasonal profile)
+#### Scatter density plot
+
+#### Matrix illustration
+
+
+- ... models are tested with Pyhton X.X, Gurobi version X.X.
 
 ## Modeling approaches 
 <img src="https://github.com/MarcoWirtz/EnergySystemOptimization/blob/master/images/level_of_detail.png" width="400">
@@ -72,103 +90,35 @@ Nevertheless, if only part-load behavior should be taken into account, this can 
 BOI als Beispiel, AbbildungsDoku mit Diagramm, Kurzergebnisse (Vergleich zu konstantem eta)
 
 
-### Objective functions
-<Introduction>
-#### Total annualized costs
-```python
-model.addConstr(obj["tac"] == sum(c_inv[dev] for dev in all_devs) + sum(c_om[dev] for dev in all_devs)  
-                                  + gas_total * param["price_gas"] + from_grid_total * param["price_el"] - to_grid_total * param["revenue_feed_in"], "sum_up_TAC")
-    
+## Gurobi solver tuning
+There are numerous possibilities to reduce the computation time of solcing the (MI)LP model. One very important way is to imporove numerics of the model by eliminate very large coefficients in the LP-matrix. This can be done by adjusting units (e.g. Watt to Kilo Watt). Another possibility is to use the Gurobi parameter tuning tool. This function trys to find a parameter configuration of the sovler that solves the model more efficiently. Example code for calling this function is    
+
 ```
+import sys
+from gurobipy import *
 
-#### CO2 emissions (onsite)
-CO2 emissions that result from burning fossil fuels by the devices itself (e.g. boiler, chp, ...)
-```python
-model.addConstr(obj["co2_onsite"] == gas_total * param["gas_CO2_emission"], "sum_up_onsite_CO2_emissions")
+# Read the model
+model = read("D:\\data\\models\\model.lp")
+
+# Set the TuneResults parameter to 1
+model.Params.tuneResults = 1
+model.params.tuneTrials = 1
+model.params.tuneTimeLimit = 1500
+# Tune the model
+model.tune()
+
+if model.tuneResultCount > 0:
+
+    # Load the best tuned parameters into the model
+    model.getTuneResult(0)
+
+    # Write tuned parameters to a file
+    model.write("D:\\data\\tune.prm")
+
+    # Solve the model using the tuned parameters
+    model.optimize()
 ```
-with
-```python
-gas_total = sum(sum(tau[t] * gas[device][t] for t in time_steps) for device in ["BOI", "CHP"])
-```  
-
-#### CO2 emissions (gross)
-CO2 emissions that result from 
-a) burning fossil fuels by the devices itself (e.g. boiler, chp, ...),
-b) power supply from national grid
-```python
-model.addConstr(obj["co2_gross"] == gas_total * param["gas_CO2_emission"] + from_grid_total * param["grid_CO2_emission"], "sum_up_gross_CO2_emissions")
-```
-
-#### CO2 emissions (net)
-CO2 emissions that result from 
-- burning fossil fuels by the devices itself (e.g. boiler, chp, ...),
-- power supply from national grid
-- avoided burden through power feed-in (negative emissions) 
-```python
-model.addConstr(obj["co2_net"] == gas_total * param["gas_CO2_emission"] + (from_grid_total - to_grid_total) * param["grid_CO2_emission"], "sum_up_net_CO2_emissions")
-```    
-
-#### Annualized investment
-
-
-#### Power from grid
-
-
-#### Net power from grid
-
-
-#### Renewable generation
-Absolute produced energy by renewable energies. (*Remark: Heat should be counted different than electricity.*)
-
-
-## Visualization
-
-As a result of the optimization workflow four files are created:
-- All decision variables are saved in `model.sol` (created by Gurobi)
-- All parameter regarding the technologies (efficiency, investment, etc.) are saved in `parameter_dev.json`
-- All further parameter (interest rate, costs for natural gas, ...) are saved in `parameter.txt`
-- Demand time series are saved in `demands.txt`
-
-The visualization methods presented below use these output files to create illustrative plots to visualize and analyse the numeric results. 
-
-### Hourly time steps of complete year (8760 time steps)
-
-#### Yearly plot (averaged over months) (1 plot)
-#### Monthly plot (averaged over days) (12 plots)
-#### Daily plot (365 plots)
-#### Carpet plot
-#### Box plot (daily profile)
-#### Box plot (seasonal profile)
-
-### Type days
-#### Visualization method 1
-#### Visualization method 2
-#### Visualization method 3
-
-### Others
-#### Scatter density plot
-#### Matrix illustration
-
-## Useful tools
-### Gurobi solver tuning
-
-
----
-
-## Documentation 
-
-### Installation and usage Instructions
-- ... models are tested with Pyhton X.X, Gurobi version X.X.
-- Required python packages: ...
-
----
-
-### Other
-    Example Text
-
-### Feedback
-All bugs, feature requests and feedback are welcome.
 
 ### Contact
-Marco Wirtz, Institute for Energy Efficient Buildings and Indoor Climate, RWTH Aachen Unviersity, Germany [(contact)](http://www.ebc.eonerc.rwth-aachen.de/cms/E-ON-ERC-EBC/Das-Institut/Mitarbeiter/Team6/~poet/Wirtz-Marco/?allou=1&lidx=1)
+For reporting bugs or feedback, please contact Marco Wirtz, Institute for Energy Efficient Buildings and Indoor Climate, RWTH Aachen Unviersity, Germany [(contact)](http://www.ebc.eonerc.rwth-aachen.de/cms/E-ON-ERC-EBC/Das-Institut/Mitarbeiter/Team6/~poet/Wirtz-Marco/?allou=1&lidx=1)
 
