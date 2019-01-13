@@ -1,12 +1,5 @@
 # Models and tools for Energy System Optimization
-This repo is a collection of typical modelling approaches frequently used for Mixed-Interger Linear Programming (MILP) formulations in the field of designing energy supply systems.
-
-### Content
-
-- [Example MILP model](./README.md#models)
-- [Modeling approaches](./README.md#models)
-- [Useful tools](./README.md#useful-tools)
-- [Documentation](./README.md#documentation)
+This repo provides an example model for designing energy supply systems with mathematical programming (in Python/Gurobi). Furthermore, it gives a collection of typical modelling approaches frequently used for Mixed-Interger Linear Programming (MILP) formulations.
 
 ## Example MILP model
 In the folder `Basic_Model` is a basic optimization model written in Python/Gurobi along with its pre-processing and post-processing routines. You can download it and run the file `run_multi_objective.py`.
