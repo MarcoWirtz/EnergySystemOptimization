@@ -30,35 +30,22 @@ Different MILP formulations has been presented in scientific literature. A few m
 ### Type day clustering
 In energy system simulations and optimizations approaches, often a full year is considered. In many models an hourly time resolution is chosen, which results in 8760 time steps for which steady state conditions are assumed. However, many MILPs are complex and comprise many continuous and binary decision variables for each time step. Therefore, the consideration of all 8760 time steps leads to huge computation times. In order to reduce the computational complexity, often so-called *type days* are introduced. All 365 days of a year are reduced to a smaller number of typical days which represent the entire year. Detailed studies, like [Schütz et al., 2016](https://pdfs.semanticscholar.org/aae0/60d220ca9490c8123abaade3d97ff674c266.pdf) and [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) investigate the effect of introducing type days in the optimization model. Here, a k-medioids clustering approach is used to cluster 365 days to a specified number of type days. The clustering is done regarding specific time serieses e.g. thermal demands. If renwable energies play an important role within the energy system, weather data has to be considered in the clustering process as well. The clustering process is done during a pre-processing. The clustering process represents a seperate optimization problem, which consists of a large number of binary variables. Therefore, full convergence cannot be realized. However, the problem converges fast and small gaps are reached within a few seconds. [Schütz et al., 2018](https://www.sciencedirect.com/science/article/pii/S0960148118306591) suggest that already a small number of type days (< 20) show good results compared to a full year optimization. However, the number strongly depends on the underlying MILP. The parameter study was conducted for a single-objective optimization (total annualized costs).
 
-### Piece-wise linear investment (reasonable option)
-One big share of total annualized costs are investment costs of the components. The investment costs of large components usually depend non-linearly with the components size. The cost curve (rated power vs specific costs) can be approximated by piece-wise linear formulation. For this purpose help variables are introduced which connect the rated power with the specific costs.
+### Piece-wise linear investment
+One big share of total annualized costs are investment costs of the components. The investment costs of large components usually depend non-linearly with the components size. The cost curve (rated power vs specific costs) can be approximated by piece-wise linear formulation. For this purpos, help variables `lin` for every time step and every supporting point of the piece-wise linear relation are introduced which connect the rated power with the specific costs. The formulation is shown for one component, boiler (BOI), in the following:
 ```python
 lin = {}
     for device in ["BOI"]:   
         lin[device] = {}
         for i in range(len(devs[device]["cap_i"])):
-            lin[device][i] = model.addVar(vtype="C", name="lin_" + device + "_i" + str(i))
-            
-# Device's capacity (i.e. nominal power)
-cap = {}
-for device in ["BOI"]:
-    cap[device] = model.addVar(vtype="C", name="nominal_capacity_" + str(device))
+            lin[device][i] = model.addVar(vtype="C", name="lin_" + device + "_i" + str(i))      
 ```
-For the help variables ...
-
-Here the formulation with Speci
-Special Ordered Sets of type 2 (SOS2 or S2): an ordered set of non-negative variables, of which at most two can be non-zero, and if 
-        # two are non-zero these must be consecutive in their ordering. 
-        
+For the formulation Special Ordered Sets of type 2 (SOS2) are introduced. These are ordered set of non-negative variables, of which at most two can be non-zero, and if two are non-zero these must be consecutive in their ordering. Furthermore, the sum of all help variables for a specific component must be equal to 1. This is expressed by:
 ```python
 for device in ["BOI"]:
-model.addSOS(gp.GRB.SOS_TYPE2, [lin[device][i] for i in range(len(devs[device]["cap_i"]))])
-        
-        # Sum of linear function variables should be 1
-model.addConstr(1 == sum(lin[device][i] for i in range(len(devs[device]["cap_i"]))))
-The rated power is then expressed by
+    model.addSOS(gp.GRB.SOS_TYPE2, [lin[device][i] for i in range(len(devs[device]["cap_i"]))])
+    model.addConstr(sum(lin[device][i] for i in range(len(devs[device]["cap_i"]))) == 1)
 ```
-
+The rated power of the boiler is expressed by
 ```python  
 for device in ["BOI"]:
     model.addConstr(cap[device] == sum(lin[device][i] * devs[device]["cap_i"][i] for i in range(len(devs[device]["cap_i"]))))
